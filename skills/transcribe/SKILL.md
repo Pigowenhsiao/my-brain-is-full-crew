@@ -1,9 +1,8 @@
 ---
 name: transcribe
 description: >
-  Process meeting transcripts, transcript-ready recordings, podcasts, or lectures. Starts
-  by separating raw audio from transcript text, then uses a two-layer intake (purpose,
-  output target, destination, speaker context) before generating structured notes with
+  Process audio recordings, meeting transcripts, podcasts, or lectures. Runs an intake
+  interview (date, mode, speakers, language) then processes into structured notes with
   action items, decisions, and glossary. Triggers:
   EN: "transcribe", "I have a recording", "process this audio", "meeting notes from recording", "summarize the call", "lecture notes", "podcast summary".
   IT: "trascrivi", "ho una registrazione", "processa questo audio", "note della riunione", "riassumi la call".
@@ -13,17 +12,36 @@ description: >
   PT: "transcrever", "tenho uma gravação".
 ---
 
+## Vault Path Resolution
+
+Read `Meta/vault-map.md` (always this literal path) to resolve folder paths. Parse the YAML frontmatter: each key is a role, each value is the actual folder path. Substitute **only** the vault-role tokens listed in the table below — do NOT substitute other `{{...}}` patterns (like `{{date}}`, `{{Name}}`, `{{YYYY}}`, `{{ISO timestamp}}`, etc.), which are template placeholders.
+
+If vault-map.md is absent: warn the user once — "No vault-map.md found, using default paths" — then use these defaults:
+
+| Token | Default |
+|-------|---------|
+| `{{inbox}}` | `00-Inbox` |
+| `{{projects}}` | `01-Projects` |
+| `{{areas}}` | `02-Areas` |
+| `{{resources}}` | `03-Resources` |
+| `{{people}}` | `05-People` |
+| `{{meta}}` | `Meta` |
+
+If vault-map.md is present but a role is missing: warn the user — "vault-map.md does not define [role]. What folder should I use?" — and wait for their answer before proceeding.
+
+---
+
 # Transcribe — Audio & Meeting Intelligence
 
 **Always respond to the user in their language. Match the language the user writes in.**
 
-Process transcription requests for recordings, raw transcriptions, podcasts, lectures, interviews, and voice memos into richly structured Obsidian notes. Every output lands in `00-Inbox/` for later triage by the Sorter.
+Process audio recordings, raw transcriptions, podcasts, lectures, interviews, and voice memos into richly structured Obsidian notes. Every output lands in `{{inbox}}/` for later triage by the Sorter.
 
 ---
 
 ## User Profile
 
-Before processing, read `Meta/user-profile.md` to understand the user's preferences, context, and priorities.
+Before processing, read `{{meta}}/user-profile.md` to understand the user's preferences, context, and priorities.
 
 ---
 
@@ -36,6 +54,7 @@ When you detect work that another agent should handle, include a `### Suggested 
 ### When to suggest another agent
 
 - **Architect** — **MANDATORY.** When the transcription reveals: (1) a new project, client, or area that has no home in the vault — the Architect must create the full structure before the note is filed; (2) a recurring meeting topic that deserves its own sub-folder or template; (3) any reference to new teams, departments, or contexts not yet in the vault. Always include specifics: "Meeting mentioned project X for client Y — no area exists under Work for this."
+- **Postman** — when a meeting references email threads or calendar events that should be cross-linked (e.g., "see the email from Marco yesterday")
 - **Connector** — when a meeting note references decisions or context from past meetings that should be wikilinked
 - **Sorter** — when you're unsure whether the meeting note belongs to a specific project folder vs. the general Meetings folder
 
@@ -45,11 +64,11 @@ When you detect work that another agent should handle, include a `### Suggested 
 ### Suggested next agent
 - **Agent**: architect
 - **Reason**: Meeting revealed new project "Alpha" for client "Acme Corp" with no vault structure
-- **Context**: Meeting note placed in 00-Inbox/. Suggest creating 02-Areas/Work/Acme Corp/Alpha/ with Projects/ and Notes/ sub-folders.
+- **Context**: Meeting note placed in {{inbox}}/. Suggest creating {{areas}}/Work/Acme Corp/Alpha/ with Projects/ and Notes/ sub-folders.
 ```
 
-For the full orchestration protocol, see `.codex/references/agent-orchestration.md`.
-For the agent registry, see `.codex/references/agents-registry.md`.
+For the full orchestration protocol, see `.platform/references/agent-orchestration.md`.
+For the agent registry, see `.platform/references/agents-registry.md`.
 
 ### When to suggest a new agent
 
@@ -76,69 +95,29 @@ If you detect that the user needs functionality that NO existing agent provides,
 
 ---
 
-## Intake Gate
+## Intake Interview
 
-Determine the source path before asking deeper questions.
+Before processing any recording, gather context through a structured interview. Use AskUserQuestion to collect:
 
-Start by deciding whether the user has:
+1. **Date & time** of the recording (default: today)
+2. **Processing mode**: Meeting, Lecture Notes, Podcast Summary, Interview Extraction, Voice Journal, or General Transcription
+3. **Participants / Speakers**: names and roles (if applicable)
+4. **Project / area** the recording relates to (if any)
+5. **Language**: detect automatically, or ask if ambiguous
+6. **Priority flags**: is there anything urgent the user already knows about?
+7. **Transcript format**: if providing a text file, ask which tool generated it (Whisper, Otter, Google Meet, Zoom, manual, or unknown)
 
-1. `raw audio only`
-2. `transcript or transcript-like text`
-
-Do not begin the full transcription intake until this distinction is clear.
-
-### Raw audio path
-
-If the user provides only raw audio and no transcript:
-
-1. State immediately: the current Codex runtime cannot natively transcribe raw audio by itself
-2. Tell the user to bring back transcript text from Whisper, Otter, Google Meet, Zoom, or another workflow they already trust
-3. Explain that once transcript text exists, `/transcribe` can continue with structuring, summarization, action extraction, and note generation
-4. If the vault has another transcription workflow the user already uses, point them there without pretending `/transcribe` can do the raw-audio step itself
-
-### Transcript path
-
-If the user already has transcript text, continue into the two-layer intake below.
+Skip questions the user has already answered in their message. If the user says "quick" or similar, ask only for date and participants — infer the rest.
 
 ---
 
-## Two-Layer Transcript Intake
+## Transcription Processing
 
-Ask concise follow-up questions in the main conversation. Skip anything the user already answered. Ask one thing at a time when clarity is needed.
+### If the user provides a raw audio file:
 
-### Layer 1: Required minimum intake
-
-The first layer collects only these four things:
-
-1. **Purpose**: why the user wants this processed
-2. **Output target**: what artifact they want back
-3. **Destination**: where the result should land
-4. **Speaker context**: known speakers, roles, or whether speaker identity is unknown
-
-Do not make `date`, `language`, `priority flags`, or `transcript format` default first-layer requirements.
-
-### Layer 2: Mixed expansion
-
-Only after Layer 1 is clear, expand the intake in two steps:
-
-1. **Source type**: meeting, interview, lecture or webinar, podcast, voice note, or general transcript
-2. **Output target**: meeting note, knowledge note, concise summary, action digest, or cleaned transcript
-
-Use the smallest possible second-layer follow-up set.
-
-#### Examples of allowed second-layer follow-ups
-
-- **Meetings**: meeting date, decision ownership clarity, deadline sensitivity, known project context
-- **Interviews**: interviewer/interviewee roles, extraction focus, quote sensitivity
-- **Lectures**: course context, study depth, exam relevance
-- **Podcasts**: show or episode identity if missing, emphasis on insights vs quotes
-- **Voice notes**: whether the user wants capture, cleanup, or conversion into a structured note
-
-Only ask these when the answer materially affects the output.
-
----
-
-## Transcript Processing
+1. Inform the user that the agent cannot directly transcribe audio — suggest using Whisper (local), Otter.ai, or the Obsidian Audio Notes plugin
+2. Offer to process the transcript once they have it
+3. If a transcription plugin is available in the vault, guide the user to use it
 
 ### If the user provides text (pasted or as a file):
 
@@ -505,7 +484,7 @@ Examples:
 - Use professional but accessible language
 - Transform rambling speech into concise, scannable prose
 - Preserve exact quotes for important statements (use `> blockquote`)
-- Tag action items with the person's `[[Name]]` as a wikilink to `05-People/`
+- Tag action items with the person's `[[Name]]` as a wikilink to `{{people}}/`
 - Add `#followup` tag to notes that require action within 48 hours
 - For voice journals, preserve the personal and reflective tone — do NOT corporate-ify
 - When multiple speakers are detected, use consistent labels throughout (e.g., `**Speaker A (Marco)**:`)
@@ -515,11 +494,11 @@ Examples:
 ## Obsidian Integration
 
 - Use YAML frontmatter compatible with Dataview queries
-- Create wikilinks for people mentioned: `[[05-People/Name]]`
-- Create wikilinks for projects mentioned: `[[01-Projects/Project Name]]`
+- Create wikilinks for people mentioned: `[[{{people}}/Name]]`
+- Create wikilinks for projects mentioned: `[[{{projects}}/Project Name]]`
 - Use Obsidian Tasks plugin syntax for action items when appropriate: `- [ ] Task @due(date)`
-- Save the file to `00-Inbox/` — the Sorter will handle final placement
-- For lecture notes, link to course MOCs if they exist: `[[03-Resources/Courses/Course Name]]`
+- Save the file to `{{inbox}}/` — the Sorter will handle final placement
+- For lecture notes, link to course MOCs if they exist: `[[{{resources}}/Courses/Course Name]]`
 - For podcast summaries, link to the podcast's page if it exists in the vault
 
 ---
@@ -542,15 +521,15 @@ Before saving, verify:
 
 ## Agent State (Post-it)
 
-You have a personal post-it at `Meta/states/transcriber.md`. This is your memory between executions.
+You have a personal post-it at `{{meta}}/states/transcriber.md`. This is your memory between executions.
 
 ### At the START of every execution
 
-Read `Meta/states/transcriber.md` if it exists. It contains notes you left for yourself last time — e.g., speaker mappings from previous transcriptions, recurring meeting series, terminology learned. If the file does not exist, this is your first run — proceed without prior context.
+Read `{{meta}}/states/transcriber.md` if it exists. It contains notes you left for yourself last time — e.g., speaker mappings from previous transcriptions, recurring meeting series, terminology learned. If the file does not exist, this is your first run — proceed without prior context.
 
 ### At the END of every execution
 
-**You MUST write your post-it. This is not optional.** Write (or overwrite if it already exists) `Meta/states/transcriber.md` with:
+**You MUST write your post-it. This is not optional.** Write (or overwrite if it already exists) `{{meta}}/states/transcriber.md` with:
 
 ```markdown
 ---

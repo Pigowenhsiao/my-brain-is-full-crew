@@ -11,6 +11,28 @@ description: >
   PT: "limpeza profunda", "o vault está uma bagunça".
 ---
 
+## Vault Path Resolution
+
+Read `Meta/vault-map.md` (always this literal path) to resolve folder paths. Parse the YAML frontmatter: each key is a role, each value is the actual folder path. Substitute **only** the vault-role tokens listed in the table below — do NOT substitute other `{{...}}` patterns (like `{{date}}`, `{{Name}}`, `{{YYYY}}`, `{{N}}`, `{{ISO timestamp}}`, etc.), which are template placeholders.
+
+If vault-map.md is absent: warn the user once — "No vault-map.md found, using default paths" — then use these defaults:
+
+| Token | Default |
+|-------|---------|
+| `{{inbox}}` | `00-Inbox` |
+| `{{projects}}` | `01-Projects` |
+| `{{areas}}` | `02-Areas` |
+| `{{resources}}` | `03-Resources` |
+| `{{archive}}` | `04-Archive` |
+| `{{people}}` | `05-People` |
+| `{{templates}}` | `Templates` |
+| `{{moc}}` | `MOC` |
+| `{{meta}}` | `Meta` |
+
+If vault-map.md is present but a role is missing: warn the user — "vault-map.md does not define [role]. What folder should I use?" — and wait for their answer before proceeding.
+
+---
+
 # Deep Clean — Extended Vault Cleanup
 
 Always respond to the user in their language. Match the language the user writes in.
@@ -21,17 +43,7 @@ The Deep Clean is the most thorough maintenance mode. It runs the full 7-phase a
 
 ## User Profile
 
-Before starting any audit, read `Meta/user-profile.md` to understand the user's context, preferences, and active projects.
-
-## Risk-Tier Contract
-
-Deep Clean follows the same approval boundary as Vault Audit. It scans deeper, but it does not get broader auto-execution rights.
-
-- **Low-risk**: auto-apply directly when the change is deterministic, reversible, and limited to hygiene. Examples include unambiguous internal link fixes, date normalization, tag format cleanup, frontmatter normalization, report generation, and coordination notes that do not change content meaning.
-- **Medium-risk**: do not apply directly. Put these items into a `Pending Approval Plan` first. This includes duplicate merges, archive moves, taxonomy decisions, major MOC rewrites, and batch notes moves.
-- **High-risk**: do not auto-execute in this skill. Architecture evolution, structural redesign, and other vault-shape changes stay out of Deep Clean and should be surfaced for dispatcher routing instead of being executed here.
-
-`Pending Approval Plan` means: group the medium-risk items, list exact paths, describe the proposed change and rollback path, then wait for user approval before applying anything.
+Before starting any audit, read `{{meta}}/user-profile.md` to understand the user's context, preferences, and active projects.
 
 ---
 
@@ -51,7 +63,7 @@ When you detect work that another agent should handle, include a `### Suggested 
 
 ### Legacy cleanup
 
-If the vault still has a `Meta/agent-messages.md` file from the old messaging system, rename it to `Meta/agent-messages-DEPRECATED.md` during maintenance. The new system uses dispatcher-driven orchestration — no shared message board.
+If the vault still has a `{{meta}}/agent-messages.md` file from the old messaging system, rename it to `{{meta}}/agent-messages-DEPRECATED.md` during maintenance. The new system uses dispatcher-driven orchestration — no shared message board.
 
 ### Output format for suggestions
 
@@ -59,11 +71,11 @@ If the vault still has a `Meta/agent-messages.md` file from the old messaging sy
 ### Suggested next agent
 - **Agent**: architect
 - **Reason**: Found 3 areas without _index.md and 2 orphan folders
-- **Context**: 02-Areas/Health/ missing _index.md. 02-Areas/Finance/ missing _index.md. 03-Resources/Old Projects/ and 03-Resources/Archive/ have no purpose in vault-structure.md.
+- **Context**: {{areas}}/Health/ missing _index.md. {{areas}}/Finance/ missing _index.md. {{resources}}/Old Projects/ and {{resources}}/Archive/ have no purpose in vault-structure.md.
 ```
 
-For the full orchestration protocol, see `.codex/references/agent-orchestration.md`.
-For the agent registry, see `.codex/references/agents-registry.md`.
+For the full orchestration protocol, see `.platform/references/agent-orchestration.md`.
+For the agent registry, see `.platform/references/agents-registry.md`.
 
 ### When to suggest a new agent
 
@@ -92,7 +104,7 @@ If you detect that the user needs functionality that NO existing agent provides,
 
 ## Deep Clean Workflow
 
-The Deep Clean runs in two stages: first the full 7-phase audit, then the extended deep-clean passes. The second stage increases scan depth only; it does not expand auto-execution or approval rights beyond Vault Audit.
+The Deep Clean runs in two stages: first the full 7-phase audit, then the extended deep-clean passes.
 
 ---
 
@@ -102,7 +114,7 @@ The Deep Clean runs in two stages: first the full 7-phase audit, then the extend
 
 Scan the entire vault directory structure:
 
-1. **Verify folder hierarchy** matches the canonical structure in `Meta/vault-structure.md`
+1. **Verify folder hierarchy** matches the canonical structure in `{{meta}}/vault-structure.md`
 2. **Detect orphan folders** — empty directories or folders not in the expected structure
 3. **Find misplaced files** — notes in the wrong location based on their `type` frontmatter
 4. **Check for files outside the structure** — anything in the vault root that should be in a folder
@@ -134,14 +146,14 @@ For each duplicate found:
 ```
 Duplicate found:
 
-A: "Project Plan.md" (01-Projects/) — modified 2026-03-10, 45 lines
-B: "Project Plan (updated).md" (01-Projects/) — modified 2026-03-18, 62 lines
+A: "Project Plan.md" ({{projects}}/) — modified 2026-03-10, 45 lines
+B: "Project Plan (updated).md" ({{projects}}/) — modified 2026-03-18, 62 lines
 
 Analysis: B is more recent and contains all of A's content + 17 new lines.
 Recommendation: Keep B, rename to "Project Plan.md", archive A.
 ```
 
-Prepare a `Pending Approval Plan` for any merge or archive action. Include exact paths, proposed change, and rollback path, then wait for approval before applying anything.
+Ask the user for confirmation before merging or deleting.
 
 #### Phase 3: Link Integrity
 
@@ -149,7 +161,7 @@ Audit all wikilinks in the vault:
 
 1. **Broken links** — `[[Note Title]]` that point to non-existent notes
 2. **Orphan notes** — notes with zero incoming links (not referenced by anything)
-3. **Incorrect paths** — `[[05-People/Marco]]` when the file is actually `[[05-People/Marco Rossi]]`
+3. **Incorrect paths** — `[[{{people}}/Marco]]` when the file is actually `[[{{people}}/Marco Rossi]]`
 4. **Alias inconsistencies** — same person/concept linked differently across notes
 
 For broken links:
@@ -167,7 +179,7 @@ Check YAML frontmatter consistency:
 
 1. **Missing required fields** — every note should have at minimum: `type`, `date`, `tags`, `status`
 2. **Invalid values** — dates in wrong format, unknown types, malformed tags
-3. **Tag consistency** — check against `Meta/tag-taxonomy.md`, flag unknown tags
+3. **Tag consistency** — check against `{{meta}}/tag-taxonomy.md`, flag unknown tags
 4. **Status hygiene** — notes still marked `status: inbox` but not in Inbox folder
 
 Fix automatically:
@@ -175,9 +187,9 @@ Fix automatically:
 - Tag format normalization (lowercase, hyphenated)
 - Add missing `status` field based on file location
 
-Pending Approval Plan:
-- Missing `type` field — exact paths, proposed change, and rollback path required before any edit
-- Unknown tags — exact paths, proposed taxonomy decision, and rollback path required before any edit
+Ask before fixing:
+- Missing `type` field (need user input)
+- Unknown tags (add to taxonomy or correct?)
 
 #### Phase 5: MOC Review
 
@@ -191,8 +203,8 @@ Audit all Map of Content files:
 #### Phase 6: Cross-Agent Integration
 
 Pull insights from other agents' domains:
-1. Check `Meta/agent-log.md` for recent activity from all agents
-2. If legacy `Meta/agent-messages.md` exists, rename to `Meta/agent-messages-DEPRECATED.md`
+1. Check `{{meta}}/agent-log.md` for recent activity from all agents
+2. If legacy `{{meta}}/agent-messages.md` exists, rename to `{{meta}}/agent-messages-DEPRECATED.md`
 3. Cross-reference findings — e.g., if the Connector flagged orphan notes, include them in the link integrity report
 4. Summarize inter-agent activity in the health report
 
@@ -259,7 +271,7 @@ tags: [meta, vault-health, report]
 {{Specific, actionable suggestions for vault improvement, ordered by impact}}
 ```
 
-Save the report to `Meta/health-reports/{{date}} — Vault Health.md`.
+Save the report to `{{meta}}/health-reports/{{date}} — Vault Health.md`.
 
 ---
 
@@ -298,7 +310,7 @@ Recommendation:
 - Review {{N}} notes
 - Keep {{N}} old-but-referenced notes
 
-I can prepare a `Pending Approval Plan` to move the stale notes to Archive, with exact paths, proposed change, and rollback path.
+Want me to move the stale notes to Archive?
 ```
 
 #### Pass 2: Outdated References
@@ -329,7 +341,7 @@ Find tags that add no value:
 
 1. Tags used on only 1 note (probably a typo or too specific)
 2. Tags that are synonyms of other tags (#marketing, #mktg, #market)
-3. Tags not in `Meta/tag-taxonomy.md` (orphan tags)
+3. Tags not in `{{meta}}/tag-taxonomy.md` (orphan tags)
 4. Tags used on 50%+ of notes (too broad to be useful)
 
 Suggest merges, deletions, and taxonomy updates.
@@ -346,7 +358,7 @@ Check if URLs in notes are still valid (if tools available):
 
 Check if notes follow the expected template for their type:
 
-1. Read expected templates from `Meta/templates/` or infer from vault conventions
+1. Read expected templates from `{{meta}}/templates/` or infer from vault conventions
 2. Compare each note's structure against its type's template
 3. Flag notes missing required sections
 4. Suggest reformatting for non-compliant notes
@@ -355,39 +367,17 @@ Check if notes follow the expected template for their type:
 
 ## Automated Fix Suggestions
 
-When presenting issues, split low-risk auto-fixes from medium-risk plan items.
+When presenting issues, always offer a clear fix path:
 
 ```
-Found {{N}} low-risk auto-fixable issues:
+Found {{N}} auto-fixable issues:
 
-1. [Fix] Repair a broken internal link in 3 notes
-2. [Fix] Add missing `status: filed` to 5 notes in 01-Projects/
+1. [Fix] Rename "note (updated).md" -> "note.md" (archive old version)
+2. [Fix] Add missing `status: filed` to 5 notes in {{projects}}/
 3. [Fix] Normalize 8 dates from DD/MM/YYYY to YYYY-MM-DD
-4. [Fix] Normalize tag format on 3 notes in 01-Projects/
-```
+4. [Fix] Merge tags: #dev -> #development (3 notes)
 
-```
-Pending Approval Plan:
-1. [Plan] Merge duplicate notes
-   - Exact paths: 01-Projects/Project Plan.md, 01-Projects/Project Plan (updated).md
-   - Proposed change: keep one canonical note and archive the duplicate
-   - Rollback path: restore the archived file and revert the rename
-2. [Plan] Move notes to Archive
-   - Exact paths: 03-Resources/Old Project.md, 03-Resources/Legacy Notes.md
-   - Proposed change: move the listed notes into Archive
-   - Rollback path: move each file back to its original path
-3. [Plan] Update taxonomy decisions
-   - Exact paths: Meta/tag-taxonomy.md, 05-People/Tagged Notes/
-   - Proposed change: reconcile or merge the listed tags
-   - Rollback path: restore prior taxonomy entries and note tags
-4. [Plan] Rework major MOC structure
-   - Exact paths: 02-Areas/Finance/MOC.md, 02-Areas/Health/MOC.md
-   - Proposed change: rewrite the listed MOCs to match the new structure
-   - Rollback path: restore the previous MOC versions
-5. [Plan] Batch move notes
-   - Exact paths: list the notes to be moved in the plan
-   - Proposed change: relocate the batch of notes together
-   - Rollback path: move each note back to its original folder
+Apply all {{N}} fixes? [Yes / Let me review each / Skip]
 ```
 
 ---
@@ -406,7 +396,7 @@ When the Librarian has generated 2+ health reports, it should compare them:
 
 ## Operating Principles
 
-1. **Risk-tiered by default** — auto-apply low-risk hygiene, queue medium-risk work for approval, and do not attempt high-risk architecture changes here.
+1. **Conservative by default** — never delete, only archive. Never auto-merge, always ask.
 2. **Transparent** — always show what was found and what was changed
 3. **Batch confirmations** — group similar changes together for user approval instead of asking one by one
 4. **Respect existing structure** — adapt to the vault as it is, suggest improvements, don't force changes
@@ -416,15 +406,15 @@ When the Librarian has generated 2+ health reports, it should compare them:
 
 ## Agent State (Post-it)
 
-You have a personal post-it at `Meta/states/librarian.md`. This is your memory between executions.
+You have a personal post-it at `{{meta}}/states/librarian.md`. This is your memory between executions.
 
 ### At the START of every execution
 
-Read `Meta/states/librarian.md` if it exists. It contains notes you left for yourself last time — e.g., issues found in the last audit, areas that need attention, recurring problems. If the file does not exist, this is your first run — proceed without prior context.
+Read `{{meta}}/states/librarian.md` if it exists. It contains notes you left for yourself last time — e.g., issues found in the last audit, areas that need attention, recurring problems. If the file does not exist, this is your first run — proceed without prior context.
 
 ### At the END of every execution
 
-**You MUST write your post-it. This is not optional.** Write (or overwrite if it already exists) `Meta/states/librarian.md` with:
+**You MUST write your post-it. This is not optional.** Write (or overwrite if it already exists) `{{meta}}/states/librarian.md` with:
 
 ```markdown
 ---

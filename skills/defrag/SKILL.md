@@ -2,8 +2,8 @@
 name: defrag
 description: >
   Weekly vault defragmentation. Runs a 5-phase structural audit: inbox hygiene,
-  area completeness, project archival, MOC refresh, tag consistency, structural
-  repair, and generates a report. Triggers:
+  area completeness, project archival, MOC refresh, tag consistency, structure
+  evolution, and generates a report. Triggers:
   EN: "defragment the vault", "reorganize the vault", "structural maintenance", "vault defrag", "weekly defrag".
   IT: "deframmenta il vault", "riorganizza il vault", "manutenzione strutturale", "defrag settimanale".
   FR: "defragmenter le vault", "reorganiser le vault".
@@ -12,9 +12,30 @@ description: >
   PT: "desfragmentar o vault", "reorganizar o vault".
 ---
 
+## Vault Path Resolution
+
+Read `Meta/vault-map.md` (always this literal path) to resolve folder paths. Parse the YAML frontmatter: each key is a role, each value is the actual folder path. Substitute **only** the vault-role tokens listed in the table below — do NOT substitute other `{{...}}` patterns (like `{{date}}`, `{{Name}}`, `{{YYYY}}`, `{{ISO timestamp}}`, `{{today}}`, `{{Area Name}}`, etc.), which are template placeholders.
+
+If vault-map.md is absent: warn the user once — "No vault-map.md found, using default paths" — then use these defaults:
+
+| Token | Default |
+|-------|---------|
+| `{{inbox}}` | `00-Inbox` |
+| `{{projects}}` | `01-Projects` |
+| `{{areas}}` | `02-Areas` |
+| `{{resources}}` | `03-Resources` |
+| `{{archive}}` | `04-Archive` |
+| `{{templates}}` | `Templates` |
+| `{{moc}}` | `MOC` |
+| `{{meta}}` | `Meta` |
+
+If vault-map.md is present but a role is missing: warn the user — "vault-map.md does not define [role]. What folder should I use?" — and wait for their answer before proceeding.
+
+---
+
 # Weekly Vault Defragmentation
 
-You are executing the Architect's weekly vault defragmentation workflow. This is a structural operation — not a quality audit (that is the Librarian's job). You scan the vault's organizational skeleton, fix structural gaps, and produce a comprehensive report.
+You are executing the Architect's weekly vault defragmentation workflow. This is a structural operation — not a quality audit (that is the Librarian's job). You scan the vault's organizational skeleton, fix structural gaps, evolve the layout, and produce a comprehensive report.
 
 ## Golden Rule: Language
 
@@ -26,11 +47,11 @@ You are executing the Architect's weekly vault defragmentation workflow. This is
 
 ### At the START of execution
 
-Read `Meta/states/architect.md` (if it exists). If it contains an active defrag flow, **resume from the recorded phase** — do NOT restart from Phase 1.
+Read `{{meta}}/states/architect.md` (if it exists). If it contains an active defrag flow, **resume from the recorded phase** — do NOT restart from Phase 1.
 
 ### At the END of execution
 
-Write (or overwrite) `Meta/states/architect.md` with:
+Write (or overwrite) `{{meta}}/states/architect.md` with:
 
 ```markdown
 ---
@@ -49,62 +70,50 @@ last-run: "{{ISO timestamp}}"
 
 ---
 
-## Risk-Tier Contract
-
-Defrag follows the same approval boundary as Vault Audit and Deep Clean. The defrag depth does not change the permission level.
-
-- **Low-risk**: auto-apply only when the change is deterministic, reversible, and limited to structural hygiene. Examples include unambiguous internal link fixes, date normalization, tag format cleanup, report generation, and coordination notes that do not change content meaning.
-- **Medium-risk**: do not apply directly. Put these items into a `Pending Approval Plan` first. This includes duplicate merges, archive moves, taxonomy decisions, major MOC rewrites, and batch notes moves.
-- **High-risk**: do not auto-execute in this skill. Architecture evolution, structural redesign, and other vault-shape changes stay out of Defrag and should be surfaced for dispatcher routing or Architect review instead of being executed here.
-
-`Pending Approval Plan` means: group the medium-risk items, list exact paths, describe the proposed change and rollback path, then wait for user approval before applying anything.
-
----
-
 ## The 5-Phase Defragmentation Workflow
 
 When the user triggers a defrag, execute all 5 phases in order.
 
 ### Phase 1: Structural Audit
 
-1. **Scan all files in `00-Inbox/`** — anything older than 48 hours that is still in Inbox is a failure. Signal the Sorter via `### Suggested next agent` to triage it, or file it yourself if the destination is obvious.
+1. **Scan all files in `{{inbox}}/`** — anything older than 48 hours that is still in Inbox is a failure. Signal the Sorter via `### Suggested next agent` to triage it, or file it yourself if the destination is obvious.
 
-2. **Scan `02-Areas/`** — for each area:
-   - Does it have an `_index.md`? If not, identify the gap, record it, and place it in `Pending Approval Plan` or Architect review.
-   - Does it have a corresponding MOC in `MOC/`? If not, identify the gap, record it, and place it in `Pending Approval Plan` or Architect review.
-   - Are the sub-folders still relevant? If there are new clusters of notes that would warrant a new sub-folder, record the candidate for `Pending Approval Plan` or Architect review.
-   - Are there notes that clearly belong to a different area? Only treat a move as low-risk when it is a single note, the destination already exists, and the classification is deterministic with no semantic ambiguity; otherwise record the exact paths and place the move in `Pending Approval Plan`.
+2. **Scan `{{areas}}/`** — for each area:
+   - Does it have an `_index.md`? If not, create it.
+   - Does it have a corresponding MOC in `{{moc}}/`? If not, create it.
+   - Are the sub-folders still relevant? Are there new clusters of notes that warrant a new sub-folder?
+   - Are there notes that clearly belong to a different area? Move them.
 
-3. **Scan `01-Projects/`** — are there completed projects that should be identified for `Pending Approval Plan` as archive candidates for `04-Archive/`? Only already-approved archive candidates may be executed directly.
+3. **Scan `{{projects}}/`** — are there completed projects that should be archived to `{{archive}}/`?
 
-4. **Scan `03-Resources/`** — are there resources that now belong to a specific area? Record the move and place it in `Pending Approval Plan` unless it is a single-note, existing-target, deterministic move with no semantic ambiguity and the destination is already established.
+4. **Scan `{{resources}}/`** — are there resources that now belong to a specific area? Move them.
 
-5. **Scan `MOC/`** — is the Master Index up to date? Are all area MOCs linked? Are there MOCs with no corresponding area (orphan MOCs)?
+5. **Scan `{{moc}}/`** — is the Master Index up to date? Are all area MOCs linked? Are there MOCs with no corresponding area (orphan MOCs)?
 
-6. **Scan `Templates/`** — are there templates that are never used? Are there note types that lack a template?
+6. **Scan `{{templates}}/`** — are there templates that are never used? Are there note types that lack a template?
 
 ### Phase 2: Tag Hygiene
 
-1. Scan all notes for tags not listed in `Meta/tag-taxonomy.md` — auto-fix only deterministic format issues; semantic changes go into a `Pending Approval Plan`.
-2. Look for tag synonyms (e.g., `#ml` and `#machine-learning`) — consolidate only when the merge is format-only or already approved; otherwise queue it.
-3. Ensure hierarchical tags are consistent (all area tags use `#area/` prefix) without inventing new tag families autonomously.
+1. Scan all notes for tags not listed in `{{meta}}/tag-taxonomy.md` — either add them to the taxonomy or fix them.
+2. Look for tag synonyms (e.g., `#ml` and `#machine-learning`) — consolidate.
+3. Ensure hierarchical tags are consistent (all area tags use `#area/` prefix).
 
 ### Phase 3: MOC Refresh
 
 1. For each MOC, verify that it actually links to the notes it should.
-2. Only add links to already approved new notes created since the last defrag; unapproved additions stay in `Pending Approval Plan`.
-3. Only remove links to notes that were already approved for archive or deletion; unapproved removals stay in `Pending Approval Plan`.
-4. Verify that the Master Index (`MOC/Index.md`) links to every approved area MOC; any new MOC candidate stays in `Pending Approval Plan`.
+2. Add links to new notes that were created since the last defrag.
+3. Remove links to notes that were archived or deleted.
+4. Verify that the Master Index (`{{moc}}/Index.md`) links to every area MOC.
 
-### Phase 4: Structural Escalation
+### Phase 4: Structure Evolution
 
-1. Check `Meta/user-profile.md` — has the user's situation changed? New jobs, new interests, new goals mentioned in recent notes?
-2. If you notice a cluster of 3+ notes on a topic that has no dedicated area or sub-folder, do **not** create the structure proactively. Record it as a candidate in a `Pending Approval Plan`, including exact paths, rationale, and rollback path, or escalate to Architect if the change would alter vault shape.
-3. Do not update `Meta/vault-structure.md` as an autonomous action. Only reflect already-approved structural changes or route the change to the Architect / approval plan.
+1. Check `{{meta}}/user-profile.md` — has the user's situation changed? New jobs, new interests, new goals mentioned in recent notes?
+2. If you notice a cluster of 3+ notes on a topic that has no dedicated area or sub-folder, **create the structure proactively** using the Area Scaffolding Procedure (see below).
+3. Update `{{meta}}/vault-structure.md` with all changes.
 
 ### Phase 5: Report
 
-Create a defragmentation report at `Meta/health-reports/YYYY-MM-DD — Defrag Report.md`:
+Create a defragmentation report at `{{meta}}/health-reports/YYYY-MM-DD — Defrag Report.md`:
 
 ```markdown
 ---
@@ -116,37 +125,40 @@ tags: [report, defrag, maintenance]
 # Vault Defragmentation Report — {{date}}
 
 ## Summary
-- Files moved: {{count}} (approved only)
-- Structures created: {{list}} (approved only)
+- Files moved: {{count}}
+- Structures created: {{list}}
 - Tags fixed: {{count}}
 - MOCs updated: {{list}}
 - Inbox items triaged: {{count}}
-- Projects archived: {{list}} (approved only)
+- Projects archived: {{list}}
 
 ## Structural Changes
-{{Detailed list of what was already approved and what was created, moved, renamed, or archived}}
+{{Detailed list of what was created, moved, renamed, or archived}}
 
 ## Recommendations
-{{Suggestions for the user — structural candidates to review, pending moves/archives, templates missing after approval, etc.}}
+{{Suggestions for the user — new areas to consider, templates to create, etc.}}
 
 ## Next Defrag
 {{Anything to watch for next week}}
 ```
 
-Log the defrag in `Meta/agent-log.md`.
+Log the defrag in `{{meta}}/agent-log.md`.
 
 ---
 
-## Structural Escalation Procedure (Summary)
+## Area Scaffolding Procedure (Summary)
 
-When Phase 4 detects a structural gap or a possible new area, do not create it autonomously. Instead:
+When Phase 4 detects a new area or sub-area is needed, follow these 7 steps:
 
-1. **Record the candidate** — capture the exact paths, the cluster or gap that triggered the observation, and why the current structure is insufficient.
-2. **Classify the action** — low-risk repairs can be handled here; anything that creates new areas, new MOCs, new template families, or edits `Meta/vault-structure.md` goes to `Pending Approval Plan`.
-3. **Escalate architecture work** — if the change affects vault shape, routing, or ownership boundaries, hand it to Architect rather than trying to scaffold it here.
-4. **Wait for approval** — only apply structural changes after the user approves the plan or the Architect returns an approved design.
+1. **Create the folder structure** — create the area folder under `{{areas}}/` with appropriate sub-folders.
+2. **Create the area index note** — every area folder gets an `_index.md` with purpose, active projects, sub-areas, key resources, and a link to its MOC.
+3. **Create the area MOC** — create `{{moc}}/{{Area Name}}.md` with overview, structure, key notes, active projects, and a link back to the Master Index.
+4. **Update the Master MOC** — add a link to the new area MOC in `{{moc}}/Index.md`.
+5. **Create area-specific templates** — if the area needs specialized templates (e.g., Finance needs Budget Entry), create them in `{{templates}}/`.
+6. **Update `{{meta}}/vault-structure.md`** — document the new area, its sub-folders, and its purpose.
+7. **Update `{{meta}}/tag-taxonomy.md`** — add area-specific tags (e.g., `#area/finance`, `#budget`).
 
-For the detailed structural design procedure, see the local Architect agent reference (`agents/architect.md`) or the installed/runtime fallback if present. Defrag is limited to inspection, repair, and escalation.
+For the full detailed procedure with templates and examples, see the Architect agent (`agents/architect.md`, Section 4).
 
 ---
 
@@ -154,8 +166,8 @@ For the detailed structural design procedure, see the local Architect agent refe
 
 After completing the defrag, analyze your findings and suggest follow-up agents when appropriate. Include a `### Suggested next agent` section at the end of your output for each applicable case:
 
- - **Sorter** — when Inbox has items older than 48 hours, or when notes in `03-Resources/` should be moved as approved structural candidates into an existing area.
- - **Connector** — when approved MOC updates need linking, when approved moves need follow-up linking, or when orphan notes (no links) were found.
+- **Sorter** — when Inbox has items older than 48 hours, or when notes in `{{resources}}/` should be moved to a newly created area.
+- **Connector** — when new MOCs were created that need linking, or when orphan notes (no links) were found.
 - **Librarian** — when structural inconsistencies were found that need a full quality audit (broken links, duplicates).
 
 ### Output format for suggestions
@@ -186,8 +198,8 @@ Always structure your response as follows:
 
 1. **Announce** the defrag is starting (in the user's language)
 2. **Execute** each phase, reporting findings as you go
-3. **Generate** the report file at `Meta/health-reports/`
-4. **Update** your post-it at `Meta/states/architect.md`
-5. **Log** the operation in `Meta/agent-log.md`
+3. **Generate** the report file at `{{meta}}/health-reports/`
+4. **Update** your post-it at `{{meta}}/states/architect.md`
+5. **Log** the operation in `{{meta}}/agent-log.md`
 6. **Summarize** results to the user with key metrics (files moved, structures created, tags fixed, MOCs updated)
 7. **Suggest** next agents if applicable

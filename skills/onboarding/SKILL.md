@@ -2,8 +2,8 @@
 name: onboarding
 description: >
   First-time vault setup and onboarding. Guides the user through a multi-phase
-  conversation to collect preferences, life areas, future integration preferences,
-  and creates the full vault structure. Triggers:
+  conversation to collect preferences, life areas, integrations, and creates the
+  full vault structure. Triggers:
   EN: "initialize the vault", "set up the vault", "onboarding", "vault setup".
   IT: "inizializza il vault", "configura il vault", "setup del vault".
   FR: "initialiser le vault", "configurer le vault".
@@ -11,6 +11,30 @@ description: >
   DE: "Vault initialisieren", "Vault einrichten".
   PT: "inicializar o vault", "configurar o vault".
   JA: "Vaultを初期化", "Vaultをセットアップ".
+---
+
+## Vault Path Resolution
+
+Read `Meta/vault-map.md` (always this literal path) to resolve folder paths. Parse the YAML frontmatter: each key is a role, each value is the actual folder path. Substitute **only** the vault-role tokens listed in the table below — do NOT substitute other `{{...}}` patterns (like `{{date}}`, `{{Name}}`, `{{YYYY}}`, `{{ISO timestamp}}`, `{{today}}`, `{{Area Name}}`, `{{area-tag}}`, etc.), which are template placeholders.
+
+If vault-map.md is absent: warn the user once — "No vault-map.md found, using default paths" — then use these defaults:
+
+| Token | Default |
+|-------|---------|
+| `{{inbox}}` | `00-Inbox` |
+| `{{projects}}` | `01-Projects` |
+| `{{areas}}` | `02-Areas` |
+| `{{resources}}` | `03-Resources` |
+| `{{archive}}` | `04-Archive` |
+| `{{people}}` | `05-People` |
+| `{{meetings}}` | `06-Meetings` |
+| `{{daily}}` | `07-Daily` |
+| `{{templates}}` | `Templates` |
+| `{{moc}}` | `MOC` |
+| `{{meta}}` | `Meta` |
+
+If vault-map.md is present but a role is missing: warn the user — "vault-map.md does not define [role]. What folder should I use?" — and wait for their answer before proceeding.
+
 ---
 
 # Onboarding — Full Vault Initialization Skill
@@ -44,13 +68,13 @@ This is your most important responsibility. When the user says "initialize the v
 
 **HARD CONSTRAINT — MANDATORY STEP-BY-STEP PROTOCOL:**
 
-You MUST ask the user one concise question at a time in the main conversation for EVERY question in every phase. This is not optional. This is how the onboarding works:
+You MUST use the `AskUserQuestion` tool for EVERY question in every phase. This is not optional. This is how the onboarding works:
 
-0. **BEFORE the first question**: create `Meta/states/` folder if it does not exist. Then read your post-it (`Meta/states/architect.md`). If it contains `active-flow: onboarding` with collected answers, **resume from the recorded next-phase** — do NOT restart from Phase 1. If no post-it exists or no active flow, start from Phase 1.
-1. Ask ONE concise question in the conversation
+0. **BEFORE the first question**: create `{{meta}}/states/` folder if it does not exist. Then read your post-it (`{{meta}}/states/architect.md`). If it contains `active-flow: onboarding` with collected answers, **resume from the recorded next-phase** — do NOT restart from Phase 1. If no post-it exists or no active flow, start from Phase 1.
+1. Ask ONE question using `AskUserQuestion`
 2. Read the user's answer
-3. **Write your post-it IMMEDIATELY after every answer** — save the current state to `Meta/states/architect.md` using the EXACT format below. This is critical: you WILL be re-invoked between questions and MUST resume from the right place.
-4. Ask the NEXT question in the conversation
+3. **Write your post-it IMMEDIATELY after every answer** — save the current state to `{{meta}}/states/architect.md` using the EXACT format below. This is critical: you WILL be re-invoked between questions and MUST resume from the right place.
+4. Ask the NEXT question using `AskUserQuestion`
 5. Repeat steps 2-4 until ALL phases are complete
 6. Only THEN create the vault structure
 
@@ -81,8 +105,8 @@ next-phase: {{the NEXT phase/question to ask, e.g. "Phase 2b — Terms of Use"}}
 - Phase 2a answers: {{one line per area}}
 - Q-terms: {{yes/no or PENDING}}
 - Q-custom-agents: {{answer or PENDING}}
-- Q9 future-email-preference: {{answer or PENDING}}
-- Q10 future-calendar-preference: {{answer or PENDING}}
+- Q9 gmail: {{answer or PENDING}}
+- Q10 gcal: {{answer or PENDING}}
 - Q-confirmation: {{yes/no or PENDING}}
 ```
 
@@ -106,29 +130,29 @@ Before writing ANY file or folder, verify you have checked off ALL of these. If 
 [ ] Phase 2a — Deep-dive for EACH selected area (one question per area)
 [ ] Phase 2b — Terms of Use presented AND explicit yes/no collected
 [ ] Phase 2c — Custom agents question asked
-[ ] Phase 3 — Q9: Future email preference
-[ ] Phase 3 — Q10: Future calendar preference
+[ ] Phase 3 — Q9: Gmail integration
+[ ] Phase 3 — Q10: Google Calendar integration
 [ ] Phase 4 — Summary presented AND user confirmation collected
 ```
 
-**After the LAST Phase 2a question, your NEXT question MUST be Phase 2b (Terms of Use). After Phase 2b, your NEXT question MUST be Phase 2c (Custom Agents). After Phase 2c, your NEXT question MUST be Phase 3 (future integrations). There are ZERO exceptions.**
+**After the LAST Phase 2a question, your NEXT question MUST be Phase 2b (Terms of Use). After Phase 2b, your NEXT question MUST be Phase 2c (Custom Agents). After Phase 2c, your NEXT question MUST be Phase 3 (Gmail). There are ZERO exceptions.**
 
 **NEVER jump from Phase 2a to Phase 4. Phase 2b, Phase 2c, and Phase 3 are mandatory.**
 
 ### RULES — VIOLATION OF ANY RULE IS A CRITICAL FAILURE
 
-- **ONE question per message.** Never bundle 2+ questions in one message.
+- **ONE question per `AskUserQuestion` call.** Never bundle 2+ questions in one message.
 - **NEVER skip a phase or a question.** Follow the checklist above top to bottom. No exceptions.
 - **NEVER create folders or files before Phase 4 confirmation.** If you catch yourself creating vault structure before the user confirms the summary, STOP. You are doing it wrong.
 - **NEVER assume answers.** Ask every question, even if the user's first message seems detailed.
-- **NEVER output all questions as text.** The questions below are for YOU to ask one at a time in the conversation, not to display as a list.
+- **NEVER output all questions as text.** The questions below are for YOU to ask one at a time via `AskUserQuestion`, not to display as a list.
 - **NEVER jump from Phase 2a to Phase 4.** Phase 2b, Phase 2c, and Phase 3 are mandatory intermediate steps.
 
 ---
 
 ### Before You Begin
 
-Check whether `Meta/user-profile.md` already exists. If it does, the vault has already been initialized. Ask the user if they want to:
+Check whether `{{meta}}/user-profile.md` already exists. If it does, the vault has already been initialized. Ask the user if they want to:
 - Re-run onboarding (overwrite profile)
 - Update specific sections of their profile
 - Reset the vault entirely
@@ -156,7 +180,7 @@ Collect the following, one question at a time, conversationally:
 ### Phase 2: Vault Preferences
 
 6. **Obsidian experience** — "Are you new to Obsidian, or are you migrating from an existing vault? If migrating, I will be careful not to overwrite anything."
-7. **Crew selection** — "The current Codex runtime has 7 active agents, plus 1 migration-gated Postman role reserved for future parity. Do you want all 7 active agents, or would you prefer to start with a subset? Here is the current roster:
+7. **Crew selection** — "The full crew has 8 specialized agents. Do you want all of them, or would you prefer to start with a subset? Here is the full roster:
    - **Architect** — vault structure and governance (that is me)
    - **Scribe** — captures and refines your notes
    - **Sorter** — triages your inbox and files notes
@@ -164,7 +188,7 @@ Collect the following, one question at a time, conversationally:
    - **Connector** — discovers links between your ideas
    - **Librarian** — audits vault quality weekly
    - **Transcriber** — processes meeting recordings and transcripts
-   - **Postman** — future email and calendar workflows (currently migration-gated in Codex)
+   - **Postman** — Gmail and Google Calendar integration
 
    You can always activate more agents later."
 
@@ -185,7 +209,7 @@ For each life area the user selected, ask **one targeted follow-up question** to
 **If the user selected Work:**
 > "Tell me about your work situation. Do you have one job or multiple? What are they? For example: 'I'm a software engineer at Company X and I also do freelance consulting.' I'll create a sub-area for each role so your notes stay separate."
 
-Based on the answer, plan sub-folders under `02-Areas/Work/` — one per job/role. Each gets its own MOC.
+Based on the answer, plan sub-folders under `{{areas}}/Work/` — one per job/role. Each gets its own MOC.
 
 **If the user selected Finance:**
 > "What aspects of your finances do you want to track? Common options: monthly budget, expense tracking, investments/portfolio, savings goals, tax documents, income from multiple sources. This helps me create the right sub-structure."
@@ -228,7 +252,7 @@ If the user answers **yes**, record it and continue.
 
 **Recording consent in user profile:**
 
-Add the following fields to `Meta/user-profile.md`:
+Add the following fields to `{{meta}}/user-profile.md`:
 
 ```yaml
 terms-accepted: true
@@ -241,9 +265,9 @@ terms-accepted-date: "YYYY-MM-DD"
 
 **This step is mandatory. Do not skip it.**
 
-After collecting consent, ask the user if they have any specific needs that the current active crew does not cover.
+After collecting consent, ask the user if they have any specific needs that the 8 core agents do not cover.
 
-> "The current active crew handles most use cases, but I can also create **custom agents** tailored to your specific needs. For example: a health tracker, a recipe manager, a habit logger, a CRM for contacts, a reading list curator — anything you want.
+> "The 8 core agents handle most use cases, but I can also create **custom agents** tailored to your specific needs. For example: a health tracker, a recipe manager, a habit logger, a CRM for contacts, a reading list curator — anything you want.
 >
 > Do you have any specific workflow or need that you would like a custom agent for? If not, we can always create one later — just say 'create a new agent' at any time."
 
@@ -258,11 +282,11 @@ If the user says **no** or wants to skip, acknowledge and move on.
 
 ### Phase 3: Integrations
 
-9. **Email preference for future migration** — "Do you use Gmail or Hey.com (or both)? External Postman integrations are not active in the current Codex runtime, but I can record your preferred backend now for a future migration phase."
-   - If Gmail: record that the user would prefer Gmail/GWS-style integration later
-   - If Hey.com: record that the user would prefer Hey integration later
-   - If both: set `email_backend` preference in user profile (default: `gws`) as a future preference only
-10. **Google Calendar preference for future migration** — "Do you use Google Calendar? Calendar integrations are not active in the current Codex runtime yet, but I can record that preference for future migration work."
+9. **Email** — "Do you use Gmail or Hey.com (or both)? The Postman agent can scan your inbox for actionable emails and save relevant information to your vault."
+   - If Gmail: ask about GWS CLI vs MCP setup (see Phase 4, Section C)
+   - If Hey.com: ask if they have the Hey CLI installed (`hey --version`). If not, point to https://github.com/basecamp/hey-cli
+   - If both: set `email_backend` preference in user profile (default: `gws`)
+10. **Google Calendar** — "Do you use Google Calendar? The Postman can import events, create meeting notes, and keep your vault synced with your schedule."
 
 ---
 
@@ -271,55 +295,95 @@ If the user says **no** or wants to skip, acknowledge and move on.
 Summarize everything the user has told you. Ask them to confirm or correct anything. Then execute the following steps in order:
 
 **A. Vault structure**
-1. Create the base vault folder structure (00-Inbox, 01-Projects, 02-Areas, 03-Resources, 04-Archive, 05-People, 06-Meetings, 07-Daily, MOC, Templates, Meta)
-2. **Run the Area Scaffolding Procedure for EVERY life area the user selected.** This is critical — do not just create empty `02-Areas/` folders. For each area: create sub-folders based on Phase 2a answers, create `_index.md`, create `MOC/{{Area}}.md`, add area-specific templates.
-3. Save the user profile to `Meta/user-profile.md`
-4. Create all core templates in `Templates/` — include area-specific templates (Work Log, Book, Course, Budget Entry, Investment, Weekly Review) based on which areas were selected
-5. Initialize `Meta/vault-structure.md`, `Meta/naming-conventions.md`, `Meta/tag-taxonomy.md`
-6. Initialize `Meta/agent-log.md`
-7. Create `Meta/states/` folder (agent post-it directory)
-8. Create the master MOC at `MOC/Index.md` — it MUST link to every area MOC created in step 2
-9. If the user selected "personal" as an area, create its structure under `02-Areas/Personal/`. Link it from the master MOC.
-10. Create a personalized welcome note in `00-Inbox/` titled with today's date and "Welcome to Your Vault"
+1. Create the base vault folder structure ({{inbox}}, {{projects}}, {{areas}}, {{resources}}, {{archive}}, {{people}}, {{meetings}}, {{daily}}, {{moc}}, {{templates}}, {{meta}})
+2. **Run the Area Scaffolding Procedure for EVERY life area the user selected.** This is critical — do not just create empty `{{areas}}/` folders. For each area: create sub-folders based on Phase 2a answers, create `_index.md`, create `{{moc}}/{{Area}}.md`, add area-specific templates.
+3. Save the user profile to `{{meta}}/user-profile.md`
+4. Create all core templates in `{{templates}}/` — include area-specific templates (Work Log, Book, Course, Budget Entry, Investment, Weekly Review) based on which areas were selected
+5. Initialize `{{meta}}/vault-structure.md`, `{{meta}}/naming-conventions.md`, `{{meta}}/tag-taxonomy.md`
+6. Initialize `{{meta}}/agent-log.md`
+7. Create `{{meta}}/states/` folder (agent post-it directory)
+8. Create the master MOC at `{{moc}}/Index.md` — it MUST link to every area MOC created in step 2
+9. If the user selected "personal" as an area, create its structure under `{{areas}}/Personal/`. Link it from the master MOC.
+10. Create a personalized welcome note in `{{inbox}}/` titled with today's date and "Welcome to Your Vault"
 
 **B. Scope the crew to this vault only (critical step)**
 
-This step ensures the crew agents activate **only when Codex is opened in this vault** — not in other projects or coding sessions.
+This step ensures the crew agents activate **only when your agent platform is opened in this vault** — not in other projects or coding sessions.
 
 Use Bash to:
 
 ```bash
-# Verify that the installer has already created the project-scoped runtime
-test -f AGENTS.md
-test -d .codex/agents
-test -d .codex/skills
-test -d .codex/references
+# 1. Create the project-scoped agents directory inside the vault
+mkdir -p .platform/agents
+
+# 2. Find where the crew agent files are currently installed
+# Try user-scope location first, then common plugin cache paths
+AGENT_SOURCE=""
+if ls ~/.platform/agents/architect.md 2>/dev/null; then
+  AGENT_SOURCE=~/.platform/agents
+fi
+
+# 3. Copy only the agents the user selected during onboarding
+# (copy all if the user selected "all agents")
+if [ -n "$AGENT_SOURCE" ]; then
+  cp "$AGENT_SOURCE"/architect.md .platform/agents/
+  # Copy each selected agent — replace the list based on Phase 2 answers:
+  # cp "$AGENT_SOURCE"/scribe.md .platform/agents/
+  # cp "$AGENT_SOURCE"/sorter.md .platform/agents/
+  # cp "$AGENT_SOURCE"/seeker.md .platform/agents/
+  # cp "$AGENT_SOURCE"/connector.md .platform/agents/
+  # cp "$AGENT_SOURCE"/librarian.md .platform/agents/
+  # cp "$AGENT_SOURCE"/transcriber.md .platform/agents/
+  # cp "$AGENT_SOURCE"/postman.md .platform/agents/
+fi
 ```
 
-After verification, inspect `ls .codex/agents/` to confirm the runtime files are in place.
+After copying, verify with `ls .platform/agents/` that the files are in place.
 
-**If the runtime files are missing**, tell the user:
-> "I couldn't find the installed Crew runtime in this vault. Please rerun `bash scripts/launchme.sh` from the repo clone inside your vault so Codex can rebuild `.codex/` and `AGENTS.md`."
+**If the agent source cannot be found automatically**, tell the user:
+> "I couldn't find the crew agent files automatically. Please copy the `.md` files from the `agents/` folder of the plugin into `.platform/agents/` inside your vault. I've created the folder for you — it's at `[vault path]/.platform/agents/`."
 
 **B2. Verify reference files**
 
-The crew agents read shared docs from `.codex/references/`. The installer copies these automatically. Verify they exist:
+The crew agents read shared docs from `.platform/references/`. The `launchme.sh` script copies these automatically. Verify they exist:
 
 ```bash
-ls .codex/references/agents.md .codex/references/agent-orchestration.md .codex/references/agents-registry.md
+ls .platform/references/agents.md .platform/references/agent-orchestration.md .platform/references/agents-registry.md
 ```
 
-If they don't exist, stop and instruct the user to rerun `bash scripts/launchme.sh` from the repo clone rather than reconstructing the runtime manually.
+If they don't exist, create them from scratch using Write:
+- `.platform/references/agents.md` — one paragraph per agent describing its role and vault area
+- `.platform/references/agent-orchestration.md` — the inter-agent coordination protocol (dispatcher-driven)
+- `.platform/references/agents-registry.md` — the single source of truth for all agents (supports core + custom agents)
 
-**C. Future Email & Calendar preferences (record only)**
+**C. Email & Calendar integration (if integrations enabled)**
 
-If the user opted into email or Google Calendar during Phase 3, record those preferences in `Meta/user-profile.md`, but do **not** configure live integrations during onboarding.
+If the user opted into email or Google Calendar during Phase 3, explain the options:
 
-Explain clearly:
+1. **Google Workspace CLI (`gws`)** — recommended for Gmail users, full read/write access (search, archive, delete, label, send emails; create/update/delete events). Point the user to `My-Brain-Is-Full-Crew/docs/gws-setup-guide.md` for setup instructions.
 
-1. External Postman integrations are **migration-gated** in the current Codex runtime.
-2. Their Gmail / Hey / Google Calendar preferences are being saved only for future migration work.
-3. `docs/gws-setup-guide.md` remains historical setup reference, not an active onboarding step for the current runtime.
+2. **Hey CLI (`hey`)** — for Hey.com users, full read/write access to Hey mailboxes. Point the user to `My-Brain-Is-Full-Crew/docs/gws-setup-guide.md` (Option A) or https://github.com/basecamp/hey-cli. Calendar operations still use `gws`.
+
+3. **MCP connectors** — simplest setup, read-only Gmail + Calendar (plus draft creation). Create `.mcp.json` at the vault root:
+
+```bash
+cat > .mcp.json << 'EOF'
+{
+  "mcpServers": {
+    "Gmail": {
+      "type": "http",
+      "url": "https://gmail.mcp.claude.com/mcp"
+    },
+    "Google Calendar": {
+      "type": "http",
+      "url": "https://gcal.mcp.claude.com/mcp"
+    }
+  }
+}
+EOF
+```
+
+If only Gmail was selected, omit the Google Calendar entry and vice versa.
 
 **D. Inform the user about the scoping**
 
@@ -327,17 +391,15 @@ After completing B and C, explain clearly:
 
 > "Your crew is now vault-scoped.
 >
-> The agents are installed in `.codex/agents/` inside your vault. This means:
-> - When you open Codex in this vault folder, all your crew agents activate
-> - When you open Codex in any other project, no crew agents
->
-> **One thing to check:** if you also installed a global copy of this project outside the vault, disable or remove that global copy so this vault-local runtime remains the only active one."
+> The agents are installed in `.platform/agents/` inside your vault. This means:
+> - When you open your agent platform in this vault folder, all your crew agents activate
+> - When you open it in any other project, no crew agents"
 
 ---
 
 ## User Profile Format
 
-The file `Meta/user-profile.md` is the **single source of truth** that all agents read. Format:
+The file `{{meta}}/user-profile.md` is the **single source of truth** that all agents read. Format:
 
 ```markdown
 ---
@@ -355,10 +417,11 @@ active-agents:
   - Connector
   - Librarian
   - Transcriber
+  - Postman
 life-areas: [{{list: work, personal, finance, learning, etc.}}]
-future-integrations:
-  email-backend: {{gws / hey / both / none}}
-  google-calendar: {{yes / no}}
+integrations:
+  gmail: {{true/false}}
+  google-calendar: {{true/false}}
 terms-accepted: {{true/false}}
 terms-accepted-date: "{{YYYY-MM-DD}}"
 onboarding-date: "{{YYYY-MM-DD}}"
@@ -384,8 +447,8 @@ asking the Architect to "update my profile".
 - **Life Areas**: {{list}}
 
 ## Integrations
-- **Future Email Preference**: {{gmail / hey / both / none}}
-- **Future Calendar Preference**: {{yes/no}}
+- **Gmail**: {{yes/no}}
+- **Google Calendar**: {{yes/no}}
 
 ## Notes
 {{Any additional notes from the conversation}}
@@ -395,13 +458,13 @@ asking the Architect to "update my profile".
 
 ## Vault Folder Structure
 
-The canonical vault structure. **02-Areas/ is dynamically populated based on the user's answers during onboarding (Phase 2 + Phase 2a).** Only create areas the user actually selected. The examples below show all possible areas — pick only the relevant ones.
+The canonical vault structure. **{{areas}}/ is dynamically populated based on the user's answers during onboarding (Phase 2 + Phase 2a).** Only create areas the user actually selected. The examples below show all possible areas — pick only the relevant ones.
 
 ```
 Vault/
-├── 00-Inbox/
-├── 01-Projects/
-├── 02-Areas/
+├── {{inbox}}/
+├── {{projects}}/
+├── {{areas}}/
 │   ├── Work/                            ← Only if "work" selected
 │   │   ├── {{Job1 Name}}/              ← One sub-folder per job/role
 │   │   │   ├── Projects/
@@ -430,13 +493,13 @@ Vault/
 │   │   └── _index.md
 │   └── Side Projects/                   ← Only if "side projects" selected
 │       └── _index.md
-├── 03-Resources/
-├── 04-Archive/
-├── 05-People/
-├── 06-Meetings/
+├── {{resources}}/
+├── {{archive}}/
+├── {{people}}/
+├── {{meetings}}/
 │   └── {{current year}}/
-├── 07-Daily/
-├── MOC/
+├── {{daily}}/
+├── {{moc}}/
 │   ├── Index.md                         ← Master MOC linking to all area MOCs
 │   ├── Work.md                          ← Only if "work" selected
 │   ├── Finance.md                       ← Only if "finance" selected
@@ -444,7 +507,7 @@ Vault/
 │   ├── Personal.md                      ← Only if "personal" selected
 │   ├── Journal.md                      ← Only if "personal" selected
 │   └── {{Custom Area}}.md              ← One MOC per custom area
-├── Templates/
+├── {{templates}}/
 │   ├── Meeting.md
 │   ├── Idea.md
 │   ├── Task.md
@@ -461,7 +524,7 @@ Vault/
 │   ├── Investment.md                    ← Only if "finance" selected
 │   ├── Work Log.md                      ← Only if "work" selected
 │   └── Journal Entry.md                ← Only if "personal" selected
-└── Meta/
+└── {{meta}}/
     ├── user-profile.md                  ← Single source of truth for all agents
     ├── vault-structure.md               ← Canonical folder structure documentation
     ├── naming-conventions.md            ← File naming rules
@@ -480,11 +543,11 @@ Create and maintain Templater-compatible templates. Each template:
 - Uses YAML frontmatter with all required fields
 - Includes Templater syntax for dynamic content: `<% tp.date.now("YYYY-MM-DD") %>`
 - Has placeholder sections that guide the user or other agents
-- Is documented in `Meta/vault-structure.md`
+- Is documented in `{{meta}}/vault-structure.md`
 
 ### Core Templates
 
-Read `.codex/references/templates.md` for the full set of template definitions. If that file does not exist, create templates based on these specifications:
+Read `.platform/references/templates.md` for the full set of template definitions. If that file does not exist, create templates based on these specifications:
 
 **Meeting.md**
 ```markdown
@@ -922,7 +985,7 @@ tags: [journal, personal]
 
 ### Step 1: Create the folder structure
 
-Create the area folder under `02-Areas/` with appropriate sub-folders based on the user's description. Use the follow-up answers from Phase 2a to decide what goes inside.
+Create the area folder under `{{areas}}/` with appropriate sub-folders based on the user's description. Use the follow-up answers from Phase 2a to decide what goes inside.
 
 ### Step 2: Create the area index note (`_index.md`)
 
@@ -950,12 +1013,12 @@ tags: [area, {{area-tag}}]
 {{Links to important reference notes}}
 
 ## MOC
-→ [[MOC/{{Area Name}}]]
+→ [[{{moc}}/{{Area Name}}]]
 ```
 
 ### Step 3: Create the area MOC
 
-Create a MOC file at `MOC/{{Area Name}}.md`:
+Create a MOC file at `{{moc}}/{{Area Name}}.md`:
 
 ```markdown
 ---
@@ -979,23 +1042,23 @@ tags: [moc, {{area-tag}}]
 {{Links to active projects in this area}}
 
 ## Related MOCs
-- [[MOC/Index|Master Index]]
+- [[{{moc}}/Index|Master Index]]
 {{Links to related area MOCs}}
 ```
 
 ### Step 4: Update the Master MOC
 
-Add a link to the new area MOC in `MOC/Index.md`.
+Add a link to the new area MOC in `{{moc}}/Index.md`.
 
 ### Step 5: Create area-specific templates (if applicable)
 
-If the area needs specialized templates (e.g., Finance needs Budget Entry and Investment), create them in `Templates/`.
+If the area needs specialized templates (e.g., Finance needs Budget Entry and Investment), create them in `{{templates}}/`.
 
-### Step 6: Update `Meta/vault-structure.md`
+### Step 6: Update `{{meta}}/vault-structure.md`
 
 Document the new area, its sub-folders, and its purpose.
 
-### Step 7: Update `Meta/tag-taxonomy.md`
+### Step 7: Update `{{meta}}/tag-taxonomy.md`
 
 Add area-specific tags (e.g., `#area/finance`, `#budget`, `#investment`).
 
@@ -1003,21 +1066,40 @@ Add area-specific tags (e.g., `#area/finance`, `#budget`, `#investment`).
 
 ## Email & Calendar Integration
 
-If the user opted into Gmail or Google Calendar during Phase 3, record those as future preferences only.
+If the user opted into Gmail or Google Calendar during Phase 3, explain the two options:
 
-- Do **not** configure `.mcp.json` during onboarding in the current Codex runtime
-- Do **not** instruct the user to enable `gws` or `hey` as part of active setup
-- Tell the user these preferences are saved for a future Postman migration phase
+1. **Google Workspace CLI (`gws`)** — recommended, full read/write access. Point the user to `My-Brain-Is-Full-Crew/docs/gws-setup-guide.md`.
+
+2. **MCP connectors** — simpler setup, read-only fallback. Create `.mcp.json` at the vault root:
+
+```json
+{
+  "mcpServers": {
+    "Gmail": {
+      "type": "http",
+      "url": "https://gmail.mcp.claude.com/mcp"
+    },
+    "Google Calendar": {
+      "type": "http",
+      "url": "https://gcal.mcp.claude.com/mcp"
+    }
+  }
+}
+```
+
+If only Gmail was selected, omit the Google Calendar entry and vice versa.
 
 ---
 
 ## Crew Scoping
 
-After creating the vault structure, verify that the installer-created runtime already exists in `.codex/` and that `AGENTS.md` is present at the vault root.
+After creating the vault structure, scope the crew agents to this vault only by copying them into `.platform/agents/` inside the vault. Only copy the agents the user selected during Phase 2 (Q7). The Architect is always copied.
 
-If these runtime files are missing, instruct the user to rerun `bash scripts/launchme.sh` from the repo clone inside the vault.
+After copying, verify with `ls .platform/agents/` that the files are in place.
 
-Also verify that `.codex/references/` contains the shared docs (`agents.md`, `agent-orchestration.md`, `agents-registry.md`). If missing, rerun the installer instead of rebuilding them by hand.
+If the agent source cannot be found automatically, instruct the user to copy the `.md` files manually from the `agents/` folder of the plugin into `.platform/agents/` inside their vault.
+
+Also verify that `.platform/references/` contains the shared docs (`agents.md`, `agent-orchestration.md`, `agents-registry.md`). If missing, create them.
 
 ---
 
@@ -1049,29 +1131,29 @@ Inform the user of missing plugins with specific rationale for why each is neede
 Before telling the user onboarding is complete, verify ALL of the following:
 
 ```
-[ ] Meta/user-profile.md exists and is complete
-[ ] Meta/vault-structure.md exists and documents the full structure
-[ ] Meta/naming-conventions.md exists
-[ ] Meta/tag-taxonomy.md exists with area-specific tags
-[ ] Meta/agent-log.md exists
-[ ] Meta/states/ folder exists
-[ ] 00-Inbox/ exists
-[ ] 01-Projects/ exists
-[ ] 02-Areas/ has a sub-folder for EACH selected life area
+[ ] {{meta}}/user-profile.md exists and is complete
+[ ] {{meta}}/vault-structure.md exists and documents the full structure
+[ ] {{meta}}/naming-conventions.md exists
+[ ] {{meta}}/tag-taxonomy.md exists with area-specific tags
+[ ] {{meta}}/agent-log.md exists
+[ ] {{meta}}/states/ folder exists
+[ ] {{inbox}}/ exists
+[ ] {{projects}}/ exists
+[ ] {{areas}}/ has a sub-folder for EACH selected life area
 [ ] Each area has _index.md
-[ ] Each area has a corresponding MOC in MOC/
-[ ] 03-Resources/ exists
-[ ] 04-Archive/ exists
-[ ] 05-People/ exists
-[ ] 06-Meetings/{{current year}}/ exists
-[ ] 07-Daily/ exists
-[ ] MOC/Index.md exists and links to all area MOCs
-[ ] Templates/ has all core templates
-[ ] Templates/ has area-specific templates for selected areas
-[ ] .codex/agents/ has the selected agent files
-[ ] .codex/references/ has shared docs
-[ ] Future integration preferences were recorded in `Meta/user-profile.md` if discussed
-[ ] Welcome note exists in 00-Inbox/
+[ ] Each area has a corresponding MOC in {{moc}}/
+[ ] {{resources}}/ exists
+[ ] {{archive}}/ exists
+[ ] {{people}}/ exists
+[ ] {{meetings}}/{{current year}}/ exists
+[ ] {{daily}}/ exists
+[ ] {{moc}}/Index.md exists and links to all area MOCs
+[ ] {{templates}}/ has all core templates
+[ ] {{templates}}/ has area-specific templates for selected areas
+[ ] .platform/agents/ has the selected agent files
+[ ] .platform/references/ has shared docs
+[ ] .mcp.json exists (if integrations were enabled)
+[ ] Welcome note exists in {{inbox}}/
 [ ] Essential Obsidian plugins were recommended to the user
 ```
 
