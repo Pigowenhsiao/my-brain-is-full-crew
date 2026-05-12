@@ -4,13 +4,13 @@
 
 ## ABSOLUTE CONSTRAINT: ONLY skills and agents from THIS project
 
-Your crew consists of **14 skills** (in `.platform/skills/`) and **8 core agents** (in `.platform/agents/`). Your agent platform auto-loads both at session start.
+Your crew consists of **16 skills** (in `.platform/skills/`) and **8 core agents + 2 custom agents** (in `.platform/agents/`). Your agent platform auto-loads both at session start.
 
 The 8 core agents are:
 
 `architect`, `scribe`, `sorter`, `seeker`, `connector`, `librarian`, `transcriber`, `postman`
 
-Custom agents created by the Architect are also valid. Check `.platform/references/agents-registry.md` for the full list of active agents (core + custom).
+Custom agents and custom skills created for this fork are also valid. Check `.platform/references/agents-registry.md` for the full list of active agents and skills.
 
 **NEVER USE:**
 - External plugins, third-party tools, or MCP servers not defined here
@@ -53,6 +53,8 @@ Skills handle complex, multi-step flows. **Check this table BEFORE the agent tab
 | 12 | `/tag-garden` | Analyze all vault tags: unused, orphan, near-duplicates, over/under-used. Suggest merges. | EN: "tag garden", "clean up tags", "tag cleanup", "tag audit" · IT: "tag garden", "pulizia tag", "revisione tag" · FR: "jardinage des tags", "nettoyer les tags" · ES: "jardín de tags", "limpiar tags" · DE: "Tag-Garten", "Tags aufräumen" · PT: "jardim de tags", "limpar tags" |
 | 13 | `/inbox-triage` | Process all notes in 00-Inbox/: classify, route, update MOCs, extract actions, daily digest. | EN: "triage the inbox", "clean up the inbox", "sort my notes", "empty inbox", "file my notes", "process the inbox" · IT: "smista l'inbox", "svuota l'inbox", "ordina le note", "triage dell'inbox", "processa l'inbox" · FR: "trier la boîte de réception", "vider l'inbox", "classer mes notes" · ES: "clasificar la bandeja de entrada", "vaciar el inbox", "ordenar mis notas" · DE: "Inbox sortieren", "Inbox leeren", "Notizen einordnen" · PT: "triagem da inbox", "esvaziar a inbox", "organizar minhas notas" |
 | 14 | `/contact-sync` | Sync a person to Apple Contacts: search, create if missing, update if incomplete. Requires `apple-contacts` MCP. | EN: "sync contact", "add to contacts", "save contact", "update contact", "is this person in my contacts" · IT: "sincronizza contatto", "aggiungi ai contatti", "salva contatto", "aggiorna contatto" · FR: "synchroniser le contact", "ajouter aux contacts" · ES: "sincronizar contacto", "agregar a contactos" · DE: "Kontakt synchronisieren", "zu Kontakten hinzufuegen" · PT: "sincronizar contato", "adicionar aos contatos" |
+| 15 | `/note-update` | Custom compounded workflow for Obsidian inbox formalization, Learning note routing, deduplication, orphan audit, STATUS update, and git sync. | EN: "note-update", "formalize inbox notes", "run note update", "inbox to learning with push" · ZH: "note-update", "整理筆記並推送", "正式化 inbox 筆記", "跑 orphan audit 然後 push" |
+| 16 | `/concept-hub-navigation` | Custom navigation convergence workflow for canonical concept hubs, root folder landings, MOC/root index alignment, and navigation link verification. | EN: "concept hub", "root navigation", "navigation cleanup", "folder landings", "canonical hub" · ZH: "補 concept hub", "收斂 root navigation", "每個資料夾 landing", "導航整理" |
 
 ---
 
@@ -70,7 +72,9 @@ When a message does NOT match any skill trigger above, use this table. Activate 
 | 6 | **sorter** | Smart batch, priority triage, project pulse (NOT standard inbox triage — that's a skill) |
 | 7 | **connector** | Links between notes, graph, MOCs, relationships, cross-linking |
 | 8 | **librarian** | Quick health check, consistency report, growth analytics, stale content (NOT full audit, deep clean, or tag garden — those are skills) |
-| 9+ | **custom agents** | Any agent created via the Architect. Check `.platform/references/agents-registry.md` for triggers and capabilities. Custom agents always have lower priority than core 8. |
+| 9 | **note-update** | Custom agent for compounded note maintenance and git sync when no skill-routed note-update workflow is a better fit |
+| 10 | **llm-wiki** | Custom agent for Obsidian-first external source ingest, Learning/Lumentum routing, cross-link/index maintenance, optional Notion and git sync |
+| 11+ | **custom agents** | Any additional agent created via the Architect. Check `.platform/references/agents-registry.md` for triggers and capabilities. Custom agents always have lower priority than core 8 and explicit fork custom agents. |
 
 ---
 
@@ -152,7 +156,12 @@ Triggers: "quick check", "consistency report", "growth analytics", "stale conten
 
 ## 9. CUSTOM AGENTS
 
-Custom agents are created via the `/create-agent` skill and stored in `.platform/agents/`. They are auto-discovered like core agents. When a user message does not match any skill or core agent, check `.platform/references/agents-registry.md` for custom agents whose Input column matches the message. If a match is found, delegate to that agent.
+This fork currently ships two custom agents:
+
+- **note-update**: compounded inbox formalization, Learning orphan audit, STATUS updates, and git sync.
+- **llm-wiki**: Obsidian-first source ingest, Learning/Lumentum routing, cross-link/index maintenance, optional Notion and git sync.
+
+Additional custom agents are created via the `/create-agent` skill and stored in `.platform/agents/`. They are auto-discovered like core agents. When a user message does not match any skill or core agent, check `.platform/references/agents-registry.md` for custom agents whose Input column matches the message. If a match is found, delegate to that agent.
 
 ---
 
@@ -223,7 +232,7 @@ This crew uses a vault map (`Meta/vault-map.md`) to adapt to any Obsidian vault 
 
 ## My Brain Is Full - Crew
 
-A crew of 8 AI subagents that manage an Obsidian vault through natural conversation.
+A crew of 8 core AI subagents plus fork-specific custom agents and skills that manage an Obsidian vault through natural conversation.
 
 ## Installation
 
@@ -250,7 +259,7 @@ The script asks a couple of questions and copies everything into `.platform/` in
 ```
 your-vault/
 ├── .platform/
-│   ├── agents/          ← 8 crew agents (auto-loaded at session start)
+│   ├── agents/          ← 8 core agents + 2 fork custom agents
 │   └── references/      ← shared docs the agents read
 ├── .mcp.json            ← Gmail + Calendar (optional, if you chose yes)
 ├── My-Brain-Is-Full-Crew/  ← the repo (for updates)

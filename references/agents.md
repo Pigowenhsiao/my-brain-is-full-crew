@@ -123,6 +123,9 @@ The dispatcher routes triggers to skills FIRST, then falls through to agents.
 | `/deep-clean` | Librarian | Extended vault cleanup |
 | `/tag-garden` | Librarian | Tag analysis and gardening |
 | `/inbox-triage` | Sorter | Inbox note processing and routing |
+| `/contact-sync` | Postman | Sync a person to Apple Contacts |
+| `/note-update` | note-update | Custom inbox-to-Learning formalization, orphan audit, STATUS update, and git sync workflow |
+| `/concept-hub-navigation` | Architect | Custom root navigation convergence and canonical concept hub workflow |
 
 ---
 

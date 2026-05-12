@@ -84,6 +84,8 @@ Skills handle complex, multi-step workflows extracted from agents. They are chec
 | `/tag-garden` | librarian | "tag garden", "clean up tags", "tag cleanup", "tag audit" | Tag analysis: unused, orphan, near-duplicates | active |
 | `/inbox-triage` | sorter | "triage the inbox", "clean up the inbox", "sort my notes", "empty inbox", "file my notes", "process the inbox" | Inbox note processing, classification, and routing | active |
 | `/contact-sync` | postman | "sync contact", "add to contacts", "save contact", "update contact", "is this person in my contacts" | Sync person to Apple Contacts (search, create, update). Requires `apple-contacts` MCP. | active |
+| `/note-update` | note-update | "note-update", "formalize inbox notes", "run note update", "整理筆記並推送", "正式化 inbox 筆記" | Custom compounded inbox-to-Learning formalization, orphan audit, STATUS update, and git sync workflow | active |
+| `/concept-hub-navigation` | architect | "concept hub", "root navigation", "navigation cleanup", "folder landings", "canonical hub", "補 concept hub", "導航整理" | Custom navigation convergence workflow for root folder landings, canonical concept hubs, MOC/root index alignment, and link verification | active |
 
 ### How Skills Are Routed
 

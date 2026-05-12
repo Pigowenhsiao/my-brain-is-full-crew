@@ -30,6 +30,7 @@ rewrite_codex_paths() {
     s|\.platform/skills/|.agents/skills/|g;
     s|\.platform/|.codex/|g;
     s|DISPATCHER\.md|AGENTS.md|g;
+    s|\.mcp\.json|.codex/config.toml|g;
   ' "$file"
 }
 
@@ -101,6 +102,16 @@ normalize_codex_routing_contract() {
     s/\binvoke the skill\b/follow the skill instructions directly in the root context/g;
     s/\binvoke the agent\b/spawn a bounded child agent from the root context/g;
     s/\bask the user\b/ask the user directly in chat and wait for the reply/g;
+    s/if the user'\''s message matches a skill trigger, follow the skill instructions directly in the root context using the \*\*follow the skill instructions directly in the root context\*\*\. Do NOT use the spawn a bounded child agent from the root context for skill-routed triggers\./if the user'\''s message matches a skill trigger, follow the skill instructions directly in the root context. Do not spawn a bounded child agent for skill-routed triggers./g;
+    s/if NO skill matches, use the agent routing table and invoke via the \*\*spawn a bounded child agent from the root context\*\*\./if no skill matches, use the agent routing table and spawn a bounded child agent from the root context when useful./g;
+    s/If a match is found, follow the skill instructions directly in the root context via the `Skill` tool and STOP/If a match is found, follow the skill instructions directly in the root context and stop/g;
+    s/do not also invoke an agent/do not also spawn a bounded child agent/g;
+    s/\*\*Max depth 3\*\*: no more than 3 agents per user request/\*\*Child depth: `agents.max_depth = 1`\*\*: spawned child agents do one bounded task, then the root context decides the next step/g;
+    s/Skill match found\? → INVOKE skill \(follow the skill instructions directly in the root context\) → RESPOND to user/Skill match found? → FOLLOW skill instructions in the root context → RESPOND to user/g;
+    s/Check AGENT routing table → INVOKE agent \(spawn a bounded child agent from the root context\)/Check AGENT routing table → SPAWN a bounded child agent from the root context when useful/g;
+    s/YES \+ not in chain \+ depth < 3 → INVOKE next/YES + still useful within `agents.max_depth = 1` → root context decides whether another bounded child task is warranted/g;
+    s|\.codex/agents/\{name\}\.md|.codex/agents/{name}.toml|g;
+    s|with YAML frontmatter and a full system prompt body|as TOML with metadata and developer instructions|g;
   ' "$file"
 }
 

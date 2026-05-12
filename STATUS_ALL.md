@@ -40,3 +40,27 @@
 
 ## What the next step should be
 - Install `jq`, rerun `tests/run.sh`, and commit any resulting non-Codex adapter fixes only if the rerun exposes code issues rather than environment issues.
+
+# STATUS_2026-05-12_codex_dispatcher_refusion
+
+## What changes were made
+- Rechecked the upstream merge for Codex usability and found that root `AGENTS.md` was still the old Codex-only dispatcher.
+- Updated `DISPATCHER.md` to include this fork's 16 skills and 8 core + 2 custom agent inventory.
+- Added `/note-update` and `/concept-hub-navigation` to the shared skill registry and agent directory references.
+- Tightened `adapters/codex-cli/adapter.sh` so generated Codex output removes stale `Skill tool`, `Agent tool`, `.mcp.json`, `.platform`, `.codex/skills`, and max-depth-3 wording.
+- Rebuilt Codex output and synchronized the generated Codex `AGENTS.md` back to the repo root.
+
+## Whether verification succeeded or failed
+- Succeeded: Codex build completed with `scripts/build.sh --platform codex-cli`.
+- Succeeded: root `AGENTS.md` scan found the required Codex/fork signals: `CODEX-ROUTING-HEADER`, 16 skills, 8 core + 2 custom agents, `.agents/skills`, `.codex/agents`, `.codex/config.toml`, `note-update`, and `concept-hub-navigation`.
+- Succeeded: root `AGENTS.md` scan found no major Codex incompatibility residues for `.platform`, `.mcp.json`, `.codex/skills`, `Skill tool`, `Agent tool`, `AskUserQuestion`, `request_user_input`, `Max depth 3`, or stale `.codex/agents/{name}.md`.
+- Succeeded: full Codex adapter test function suite passed.
+- Succeeded: Codex install/update test function suite passed.
+- Succeeded: `git diff --check` passed.
+
+## If verification still failed, the failure reason and blocker
+- Full cross-platform `tests/run.sh` remains blocked by missing `jq` in the local Git Bash environment for Claude Code, Gemini CLI, and OpenCode JSON adapter tests.
+
+## What the next step should be
+- Commit and push the Codex dispatcher refusion.
+- Install `jq` later if full non-Codex platform verification is required.
