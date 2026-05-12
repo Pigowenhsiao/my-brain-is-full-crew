@@ -22,3 +22,21 @@
 ## What the next step should be
 - Install or provide `jq` for Git Bash, then rerun `tests/run.sh` to verify the non-Codex adapters.
 - Continue with commit and push for the Codex-verified upstream merge.
+
+# STATUS_2026-05-12_upstream_merge_pushed
+
+## What changes were made
+- Created commit `f521808` with the upstream runtime merge, Codex-specific fixes, fork custom-agent preservation, tests, and status log.
+- Pushed branch `Codex` to `origin` at `https://github.com/Pigowenhsiao/my-brain-is-full-crew.git`.
+
+## Whether verification succeeded or failed
+- Succeeded: git commit completed.
+- Succeeded: git push completed.
+- Previous verification remains: Codex adapter tests passed, Codex install/update tests passed, Codex build passed, and staged diff check passed before the merge commit.
+- Full cross-platform test suite still failed because `jq` is missing from the local Git Bash environment.
+
+## If verification still failed, the failure reason and blocker
+- The remaining blocker is environmental: install `jq` for Git Bash to run Claude Code, Gemini CLI, and OpenCode JSON adapter tests.
+
+## What the next step should be
+- Install `jq`, rerun `tests/run.sh`, and commit any resulting non-Codex adapter fixes only if the rerun exposes code issues rather than environment issues.
