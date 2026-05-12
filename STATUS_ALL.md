@@ -64,3 +64,21 @@
 ## What the next step should be
 - Commit and push the Codex dispatcher refusion.
 - Install `jq` later if full non-Codex platform verification is required.
+
+# STATUS_2026-05-12_codex_dispatcher_refusion_pushed
+
+## What changes were made
+- Created commit `735253f` for the Codex dispatcher refusion.
+- Pushed branch `Codex` to `origin` after aligning root `AGENTS.md`, source `DISPATCHER.md`, Codex adapter normalization, and shared registries.
+
+## Whether verification succeeded or failed
+- Succeeded: commit completed.
+- Succeeded: push completed.
+- Verification before commit succeeded for Codex adapter tests, Codex install/update tests, Codex build, root `AGENTS.md` compatibility scans, and diff checks.
+
+## If verification still failed, the failure reason and blocker
+- No Codex-specific blocker remains.
+- Full non-Codex adapter verification still requires `jq` on PATH.
+
+## What the next step should be
+- Optional: install `jq` and rerun `tests/run.sh` for full Claude/Gemini/OpenCode adapter coverage.
